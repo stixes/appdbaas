@@ -1,11 +1,17 @@
 <?php
+
+function valid_db_name($db) {
+  return is_string($db) && preg_match('/^[A-Za-z][A-Za-z0-9_]*$/',$db);
+}
+
 function create_user($name,$password) {
   $sql = "CREATE USER IF NOT EXISTS ':name'@'%' IDENTIFIED BY ':password';";
   query($sql,array(":name"=>$name,":password"=>$password));
 }
 
 function create_db($name) {
-  $sql = "CREATE DATABASE IF NOT EXISTS :name ";
+  if (!valid_db_name($name)) respond(array('error'=>true,'exception'=>'Invalid database name'),500);
+  $sql = "CREATE DATABASE IF NOT EXISTS :name;";
   query($sql,array(":name" => $name));
 }
 
@@ -17,10 +23,7 @@ function grant_access($name) {
 }
 
 function appdb_info($db) {
-  if (!in_array($db,appdbs())) {
-    http_response_code(404);
-    return array('name'=>$db, 'exists'=>false);
-  }
+  if (!in_array($db,appdbs())) respond(array('name'=>$db, 'exists'=>false),404);
   return array('name'=>$db, 'exists'=>true,'has_user'=>true);
 
 }
@@ -35,7 +38,6 @@ function appdbs() {
       return array();
     }
   } else {
-    http_response_code(500);
-    return false;
+    respond(array('error'=>true,'data'=>"Unable to look up databases. Invalid data from database."),500);
   }
 }

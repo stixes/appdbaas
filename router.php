@@ -17,5 +17,9 @@ if (function_exists($func)) {
   $msg = call_user_func_array($func,$uri);
   die(json_encode($msg));
 }
-http_response_code(500);
-die('Unsupported function not found');
+respond(array('error'=>true,'exception'=>'Unsupported function not found'),500);
+
+function respond($data,$code=200) {
+  http_response_code($code);
+  die(json_encode($data));
+}
