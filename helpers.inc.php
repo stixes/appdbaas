@@ -26,7 +26,16 @@ function appdb_info($db) {
 }
 
 function appdbs() {
-  $dbs=array_column(query('show databases;'),'Database');
-  $users=array_column(query('select distinct user from mysql.user where not (user="root" or user like "%.sys");'),'User');
-  return array_intersect($dbs,$users);
+  $dbs=query('show databases;');
+  $users=query('select distinct user from mysql.user where not (user="root" or user like "%.sys");');
+  if ($dbs && $users) {
+    if (is_array($dbs) && is_array($users)) {
+      return array_values(array_intersect(array_column($dbs,'Database'),array_column($users,'User')));
+    } else {
+      return array();
+    }
+  } else {
+    http_response_code(500);
+    return false;
+  }
 }

@@ -19,8 +19,11 @@ function post_db() {
   $db = $data['name'];
   if (in_array($db,appdbs())) error_exit('Cannot create db '.$db.'. db already exists');
   create_db($db);
+  error_log('create: db created');
   create_user($db,$data['password']);
+  error_log('create: user created');
   grant_access($db);
+  error_log('create: access granted');
   return appdb_info($db);
 }
 

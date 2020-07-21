@@ -13,49 +13,49 @@ function db_connect() {
     $db_user = DB_USER;
     $db_password = DB_PASS;
 
-    $conn = new mysqli($db_host,$db_user,$db_password);
-    if ($conn->connect_errno) {
+    #$conn = new mysqli($db_host,$db_user,$db_password);
+    #if ($conn->connect_error) {
+    #  http_response_code(500);
+    #  die("Failed to connect to MySQL: (" . $conn->connect_errno . ") " . $conn->connect_error);
+    #} 
+    try {
+      $conn = new PDO("mysql:host=$db_host",$db_user,$db_password);
+      $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      error_log("db-connect: success");
+    } catch (PDOException $e) {
+      error_log("db-connect: failed: " . $e->getMessage());
       http_response_code(500);
-      die("Failed to connect to MySQL: (" . $conn->connect_errno . ") " . $conn->connect_error);
-    } 
+      die(json_encode(false));
+    }
   }
   return $conn;
 }
 
 
-function query($sql,$args=false) {
+function query($sql,$args=array()) {
   error_log('db-exec: '.$sql);
   $db = db_connect();
-#  if ($args!==false && !is_array($args)) $args=array($args);
+  try {
+    foreach ($args as $k => $a) {
+#        $a = $db->real_escape_string($a);
+      error_log('db-exec: key='.$k.' arg='.$a);
+      $sql = str_replace( $k, $a, $sql);
+    }
 
-#  if ($stmt = $db->prepare($sql)) {
-#    if (is_array($args)) 
-#      foreach ($args as $a) {
-#        error_log('db-exec: arg='.$a);
-#        $stmt->bind_param("s",$a);
-#      }
-#    error_log(print_r($stmt,1));
-#    $stmt->execute();
-#    $query = $stmt->get_result();
-
-    if (is_array($args)) 
-      foreach ($args as $k => $a) {
-        $a = $db->real_escape_string($a);
-        error_log('db-exec: key='.$k.' arg='.$a);
-        $sql = str_replace( $k, $a, $sql);
-      }
-
+    error_log('db-query: '.$sql);
     $query = $db->query($sql);
+    $query->execute();
 
     if ($query) {
-      if ($query->num_rows>0) {
-        $results = array();
-        while ($row = $query->fetch_assoc()) $results[]= $row;
+      error_log(print_r($query,1));
+      if ($query->rowCount()>0) {
+        $results = $query->fetchAll();
         return $results;
       } else { return true; }
     }
-#  }
-  error_log('db: error during query: '.$sql);
-  error_log(' - '.$db->error);
-  return false;
+  } catch (PDOException $e) {
+    error_log("db-query: failed: " . $e->getMessage());
+    http_response_code(500);
+    die(json_encode(false));
+  }
 }

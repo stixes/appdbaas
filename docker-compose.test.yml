@@ -6,12 +6,16 @@ networks:
 services:
   db:
     image: mariadb:10.5
+#    ports:
+#      - 3306
     environment:
       - MYSQL_ROOT_PASSWORD=RandomSecret
     networks:
       - backend
 
   appdbaas:
+    ports:
+      - 8080
     build:
       context: .
       dockerfile: Dockerfile
@@ -24,14 +28,8 @@ services:
       DB_PASS: RandomSecret
 
   sut:
-#    image: php:7-alpine # Using baseimage from appdbaas for caching and curl
     build:
       context: test
-#    entrypoint: ["sh","-c"]
-#    entrypoint: ["echo",]
-#    command: |
-#      curl -f -s -d 'name=test&password=password' -XPOST http://appdbaas:8080/db/ && \
-#      curl -f -s http://appdbaas:8080/db/
     networks:
       - backend
     depends_on:
